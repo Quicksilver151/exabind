@@ -10,31 +10,58 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build-and-release:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        target: [x86_64-unknown-linux-gnu, x86_64-pc-windows-msvc]
-
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-
     - name: Set up Rust
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         toolchain: stable
         override: true
-
-    - name: Build
-      run: cargo build --release --target ${{ matrix.target }}
-
     - name: Run tests
       run: cargo test --verbose
 
-    - name: Upload release artifact
+  build-linux:
+    name: Build for Linux
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+    - name: Install target
+      run: rustup target add x86_64-unknown-linux-gnu
+    - name: Build
+      run: cargo build --release --target x86_64-unknown-linux-gnu
+    - name: Upload Linux Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.os }}-release
-        path: target/${{ matrix.target }}/release/
+        name: linux-release
+        path: target/x86_64-unknown-linux-gnu/release/
+
+  build-windows:
+    name: Build for Windows
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+    - name: Install target
+      run: rustup target add x86_64-pc-windows-msvc
+    - name: Build
+      run: cargo build --release --target x86_64-pc-windows-msvc
+    - name: Upload Windows Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-release
+        path: target/x86_64-pc-windows-msvc/release/
